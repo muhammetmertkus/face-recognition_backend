@@ -12,6 +12,9 @@ click
 colorama
 # deepface==0.0.79 # Optional: Specify a version, or leave for latest
 deepface
-dlib # Already likely a dependency of face_recognition
+# dlib yerine pre-built wheel kullanıyoruz
+https://github.com/jloh02/dlib/releases/download/v19.22/dlib-19.22.99-cp39-cp39-linux_x86_64.whl; platform_system == "Linux" and python_version == "3.9"
+# Raspberry Pi veya diğer platformlar için varsayılan dlib
+dlib; platform_system != "Linux" or python_version != "3.9"
 Flask-Cors
 gunicorn 
