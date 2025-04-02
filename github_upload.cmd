@@ -1,6 +1,6 @@
 @echo off
-echo Docker Entegrasyonlu GitHub Yükleme Scripti
-echo ------------------------------------------
+echo Docker Entegrasyonlu GitHub Yükleme Scripti (PORT Sorununa Çözüm)
+echo ---------------------------------------------------------------
 
 :: Git repo başlat (eğer ilk kez yapıyorsanız)
 git init
@@ -20,14 +20,16 @@ git branch -M main
 :: GitHub'a gönder (ilk kez yapıyorsanız)
 git push -u origin main
 
-:: Railway Docker çözümü için dosyaları ekle
-git add Dockerfile .dockerignore railway.json
-git commit -m "Railway dağıtımı için Docker çözümü eklendi"
+:: Railway Docker çözümü için dosyaları ekle (PORT sorunu çözümü ile birlikte)
+git add Dockerfile .dockerignore railway.json start.sh
+git commit -m "Railway dağıtımı için Docker çözümü eklendi (PORT sorunu giderildi)"
 git push
 
 echo.
 echo İşlem tamamlandı!
 echo Repository: https://github.com/muhammetmertkus/face-recognition_backend
 echo.
-echo Railway'de projenizi güncelleyin. Docker entegrasyonu sayesinde dlib kurulum sorunu çözülecektir.
+echo Railway'de projenizi güncelleyin. Docker entegrasyonu sayesinde:
+echo 1. dlib kurulum sorunu çözülecektir.
+echo 2. PORT değişkeni sorunu düzeltildi.
 pause 

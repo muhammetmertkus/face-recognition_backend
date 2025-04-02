@@ -19,11 +19,15 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Başlatma scriptini ekle ve çalıştırılabilir yap
+COPY start.sh .
+RUN chmod +x start.sh
+
 # Uygulama kodunu kopyala
 COPY . .
 
-# Port ayarla
+# Port ayarla - DEFAULT PORT tanımla
 ENV PORT=8000
 
-# Çalıştırma komutu
-CMD gunicorn --bind 0.0.0.0:$PORT run:app 
+# Çalıştırma komutu - start.sh scriptini kullan
+CMD ["./start.sh"] 
