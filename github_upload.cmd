@@ -20,6 +20,11 @@ git branch -M main
 :: GitHub'a gönder
 git push -u origin main
 
+:: Aptfile ekle
+git add Aptfile
+git commit -m "Railway için Aptfile eklendi"
+git push
+
 echo.
 echo İşlem tamamlandı!
 echo Repository: https://github.com/muhammetmertkus/face-recognition_backend
