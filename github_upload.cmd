@@ -1,6 +1,6 @@
 @echo off
-echo Docker Entegrasyonlu GitHub Yükleme Scripti (PORT Sorununa Çözüm)
-echo ---------------------------------------------------------------
+echo Docker ve Şifre Sıfırlama API Güncellemesi
+echo ------------------------------------------
 
 :: Git repo başlat (eğer ilk kez yapıyorsanız)
 git init
@@ -20,16 +20,22 @@ git branch -M main
 :: GitHub'a gönder (ilk kez yapıyorsanız)
 git push -u origin main
 
-:: Railway Docker çözümü için dosyaları ekle (PORT sorunu çözümü ile birlikte)
-git add Dockerfile .dockerignore railway.json start.sh
-git commit -m "Railway dağıtımı için Docker çözümü eklendi (PORT sorunu giderildi)"
+:: Şifre sıfırlama API güncelleme
+git add app/routes/password_reset.py password_reset.md
+git commit -m "Şifre sıfırlama API eklendi"
+git push
+
+:: Railway Docker çözümü için dosyaları güncelleme
+git add Dockerfile requirements.txt .dockerignore railway.json start.sh
+git commit -m "Railway dağıtımı için Docker çözümü güncellendi (dlib sorunları giderildi)"
 git push
 
 echo.
 echo İşlem tamamlandı!
 echo Repository: https://github.com/muhammetmertkus/face-recognition_backend
 echo.
-echo Railway'de projenizi güncelleyin. Docker entegrasyonu sayesinde:
-echo 1. dlib kurulum sorunu çözülecektir.
-echo 2. PORT değişkeni sorunu düzeltildi.
+echo Güncellemeler:
+echo 1. Şifre sıfırlama API eklendi
+echo 2. Railway dlib kurulum sorunu çözüldü
+echo 3. Production için dosyalar güncellendi
 pause 

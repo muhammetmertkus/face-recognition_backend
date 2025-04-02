@@ -89,6 +89,7 @@ def create_app(config_class=Config):
     from .routes.courses import courses_bp
     from .routes.attendance import attendance_bp
     from .routes.reports import reports_bp
+    from .routes.password_reset import password_reset_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(teachers_bp, url_prefix='/api/teachers')
@@ -96,6 +97,7 @@ def create_app(config_class=Config):
     app.register_blueprint(courses_bp, url_prefix='/api/courses')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    app.register_blueprint(password_reset_bp, url_prefix='/api/password')
 
 
     @app.route('/')

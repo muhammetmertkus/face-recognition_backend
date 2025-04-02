@@ -12,6 +12,7 @@ click
 colorama
 # deepface==0.0.79 # Optional: Specify a version, or leave for latest
 deepface
-dlib # Already likely a dependency of face_recognition
+# dlib GitHub URL'si 404 hatası verdi, orijinal dlib'i kullan
+dlib
 Flask-Cors
 gunicorn 
