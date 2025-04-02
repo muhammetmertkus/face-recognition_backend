@@ -1,0 +1,17 @@
+Flask
+Flask-JWT-Extended
+Werkzeug
+Pydantic
+face_recognition
+Pillow
+python-dotenv
+flasgger
+requests
+bcrypt
+click
+colorama
+# deepface==0.0.79 # Optional: Specify a version, or leave for latest
+deepface
+dlib # Already likely a dependency of face_recognition
+Flask-Cors
+gunicorn 
