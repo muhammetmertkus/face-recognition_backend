@@ -1,6 +1,6 @@
 @echo off
-echo GitHub'a Yukleme Scripti (Güncellenmiş)
-echo ---------------------
+echo Docker Entegrasyonlu GitHub Yükleme Scripti
+echo ------------------------------------------
 
 :: Git repo başlat (eğer ilk kez yapıyorsanız)
 git init
@@ -20,12 +20,14 @@ git branch -M main
 :: GitHub'a gönder (ilk kez yapıyorsanız)
 git push -u origin main
 
-:: Railway dağıtım sorunlarını çözmek için güncelleme
-git add requirements.txt .buildpacks Aptfile
-git commit -m "Railway dağıtım sorunları için buildpacks ve dlib wheel eklendi"
+:: Railway Docker çözümü için dosyaları ekle
+git add Dockerfile .dockerignore railway.json
+git commit -m "Railway dağıtımı için Docker çözümü eklendi"
 git push
 
 echo.
 echo İşlem tamamlandı!
 echo Repository: https://github.com/muhammetmertkus/face-recognition_backend
+echo.
+echo Railway'de projenizi güncelleyin. Docker entegrasyonu sayesinde dlib kurulum sorunu çözülecektir.
 pause 

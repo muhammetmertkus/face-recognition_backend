@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+
+# Diğer
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Dosyalar (production ortamında saklanmaması gereken)
+uploads/
+data/
+
+# Railway ve Heroku dosyaları (bunları dahil etmenize gerek yok)
+*.log
+.buildpacks
+Aptfile 
