@@ -19,9 +19,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Başlatma scriptini ekle ve çalıştırılabilir yap
+# Başlatma scriptini ekle ve çalıştırılabilir yap - Railway için özel izin ayarları
 COPY start.sh .
-RUN chmod +x start.sh
+RUN chmod 755 start.sh && \
+    ls -la start.sh && \
+    cat start.sh
 
 # Uygulama kodunu kopyala
 COPY . .
@@ -29,5 +31,5 @@ COPY . .
 # Port ayarla - DEFAULT PORT tanımla
 ENV PORT=8000
 
-# Çalıştırma komutu - start.sh scriptini kullan
-CMD ["./start.sh"] 
+# Çalıştırma komutu - Doğrudan bash kullanarak çalıştır
+CMD ["/bin/bash", "start.sh"] 

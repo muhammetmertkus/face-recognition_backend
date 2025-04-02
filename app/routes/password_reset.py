@@ -5,34 +5,47 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.user import default_datetime
 from app.services import data_service
 from app.utils.auth import admin_required
+import html
+import bcrypt
+from ..models.user import User, db
 
-password_reset_bp = Blueprint('password_reset_bp', __name__)
+password_reset = Blueprint('password_reset', __name__)
 
 USERS_FILE = 'users.json'
 
-def generate_secure_password(length=10):
-    """Güvenli rastgele şifre oluştur"""
-    alphabet = string.ascii_letters + string.digits + '!@#$%^&*()_+=-'
+def generate_password(length=12):
+    """Güvenli bir şifre oluşturur."""
+    alphabet = string.ascii_letters + string.digits + '!@#$%&*'
     password = ''.join(secrets.choice(alphabet) for _ in range(length))
+    
+    # Şifrenin en az bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içerdiğinden emin olun
+    while (not any(c.isupper() for c in password)
+           or not any(c.islower() for c in password)
+           or not any(c.isdigit() for c in password)
+           or not any(c in '!@#$%&*' for c in password)):
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+    
     return password
 
 def send_password_reset_email(email, new_password):
-    """Yeni şifreyi email olarak gönder"""
-    sender_email = "bykusbilet@gmail.com"
-    app_password = "htln pcbf bfli bqgr"  # Gmail uygulama şifresi
+    """Şifre sıfırlama e-postasını gönderir."""
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    sender_email = "bykusbilet@gmail.com"  # Gönderen e-posta
+    app_password = "oqbw kgrc ptlt iotl"  # Uygulama şifresi
     
-    # Email mesajı oluştur
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Şifre Sıfırlama - Yüz Tanıma Sistemi"
-    message["From"] = sender_email
-    message["To"] = email
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Şifre Sıfırlama - Yüz Tanıma Sistemi"
+    msg["From"] = sender_email
+    msg["To"] = email
     
     # HTML içeriği oluştur
-    html = f"""
+    html_content = f"""
+    <!DOCTYPE html>
     <html>
     <head>
         <style>
@@ -40,144 +53,85 @@ def send_password_reset_email(email, new_password):
                 font-family: Arial, sans-serif;
                 line-height: 1.6;
                 color: #333;
-            }}
-            .container {{
                 max-width: 600px;
                 margin: 0 auto;
-                padding: 20px;
+            }}
+            .container {{
                 border: 1px solid #ddd;
                 border-radius: 5px;
+                padding: 20px;
+                margin-top: 20px;
             }}
             .header {{
-                background-color: #4a86e8;
+                background-color: #4285f4;
                 color: white;
-                padding: 10px 20px;
-                border-radius: 5px 5px 0 0;
+                padding: 10px;
                 text-align: center;
-            }}
-            .content {{
-                padding: 20px;
-                background-color: #f9f9f9;
+                border-radius: 5px 5px 0 0;
+                margin-bottom: 20px;
             }}
             .password-box {{
-                background-color: #fff;
+                background-color: #f9f9f9;
                 border: 1px solid #ddd;
-                padding: 10px;
-                margin: 15px 0;
+                padding: 15px;
                 text-align: center;
-                font-size: 20px;
-                font-weight: bold;
-                letter-spacing: 1px;
-                border-radius: 3px;
+                font-size: 18px;
+                margin: 20px 0;
+                border-radius: 5px;
             }}
             .footer {{
-                text-align: center;
                 font-size: 12px;
                 color: #777;
                 margin-top: 20px;
+                text-align: center;
             }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h2>Şifre Sıfırlama</h2>
+                <h2>Yüz Tanıma Sistemi</h2>
             </div>
-            <div class="content">
-                <p>Merhaba,</p>
-                <p>Yüz Tanıma Sistemine erişim için şifreniz sıfırlanmıştır. Yeni şifreniz aşağıda verilmiştir:</p>
-                
-                <div class="password-box">
-                    {new_password}
-                </div>
-                
-                <p>Sisteme giriş yaptıktan sonra güvenlik için şifrenizi değiştirmenizi öneriyoruz.</p>
-                <p>Bu şifre sıfırlama talebinde bulunmadıysanız, lütfen sistem yöneticisiyle iletişime geçin.</p>
-                <p>Saygılarımızla,<br>Yüz Tanıma Sistemi Ekibi</p>
+            <p>Sayın Kullanıcı,</p>
+            <p>Şifreniz başarıyla sıfırlanmıştır. Yeni şifreniz aşağıda belirtilmiştir:</p>
+            
+            <div class="password-box">
+                <strong>{html.escape(new_password)}</strong>
             </div>
+            
+            <p>Güvenlik nedeniyle, sisteme giriş yaptıktan sonra bu şifreyi değiştirmenizi önemle tavsiye ederiz.</p>
+            <p>Eğer bu şifre sıfırlama talebini siz yapmadıysanız, lütfen derhal sistem yöneticisiyle iletişime geçiniz.</p>
+            
+            <p>Saygılarımızla,<br>Yüz Tanıma Sistemi Ekibi</p>
+            
             <div class="footer">
-                <p>Bu mail otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.</p>
+                <p>Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.</p>
             </div>
         </div>
     </body>
     </html>
     """
     
-    # HTML içeriğini MIMEText nesnesine ekle
-    part = MIMEText(html, "html")
-    message.attach(part)
+    # HTML içeriğini email mesajına ekle
+    html_part = MIMEText(html_content, "html")
+    msg.attach(html_part)
     
     try:
-        # SMTP sunucuya bağlan
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        # Email gönderme
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
         server.login(sender_email, app_password)
-        
-        # Email'i gönder
-        server.sendmail(sender_email, email, message.as_string())
+        server.sendmail(sender_email, email, msg.as_string())
         server.quit()
-        
-        current_app.logger.info(f"Şifre sıfırlama email'i {email} adresine gönderildi.")
-        return True
+        return True, None
     except Exception as e:
-        current_app.logger.error(f"Email gönderimi sırasında hata: {e}")
-        return False
+        return False, str(e)
 
-@password_reset_bp.route('/reset', methods=['POST'])
-@admin_required  # Sadece adminler başkalarının şifresini sıfırlayabilir
+@password_reset.route('/reset', methods=['POST'])
 def reset_password():
     """
-    Kullanıcının şifresini sıfırlar ve yeni şifreyi email ile gönderir.
-    ---
-    tags:
-      - Şifre Yönetimi
-    security:
-      - Bearer: []
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - email
-          properties:
-            email:
-              type: string
-              description: Şifresi sıfırlanacak kullanıcının email adresi
-              example: "kullanici@ornek.com"
-    responses:
-      200:
-        description: Şifre başarıyla sıfırlandı ve email gönderildi
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Şifre başarıyla sıfırlandı ve email gönderildi"
-      400:
-        description: Geçersiz istek (email verilmemiş)
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Email adresi gereklidir"
-      404:
-        description: Belirtilen email adresiyle kullanıcı bulunamadı
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Bu email adresine sahip kullanıcı bulunamadı"
-      500:
-        description: Email gönderimi sırasında hata oluştu
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+    Kullanıcı şifresini sıfırlar ve yeni şifreyi email ile gönderir.
+    Bu endpoint kimlik doğrulama gerektirmez, şifresini unutan kullanıcılar için.
     """
     data = request.get_json()
     
@@ -186,109 +140,122 @@ def reset_password():
     
     email = data['email']
     
-    # Kullanıcıyı email ile bul
-    user = data_service.find_one(USERS_FILE, email=email)
+    user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"message": "Bu email adresine sahip kullanıcı bulunamadı"}), 404
     
     # Yeni şifre oluştur
-    new_password = generate_secure_password(12)  # 12 karakterli güvenli şifre
+    new_password = generate_password()
     
-    # Şifreyi hashle ve kullanıcıyı güncelle
-    import bcrypt
-    password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Şifreyi hashle
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
     
-    updates = {
-        "password_hash": password_hash,
-        "updated_at": default_datetime()
-    }
-    
-    updated_user = data_service.update_item(USERS_FILE, user['id'], updates)
-    
-    if not updated_user:
-        return jsonify({"message": "Şifre güncellenirken bir hata oluştu"}), 500
+    # Kullanıcının şifresini güncelle
+    user.password = hashed_password
+    db.session.commit()
     
     # Email gönder
-    email_sent = send_password_reset_email(email, new_password)
+    email_sent, error = send_password_reset_email(email, new_password)
     
     if email_sent:
         return jsonify({"message": "Şifre başarıyla sıfırlandı ve email gönderildi"}), 200
     else:
-        return jsonify({
-            "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
-            "password": new_password  # Hata durumunda şifreyi yanıtta görüntüle (Sadece geliştirme ortamında kullanılmalı)
-        }), 500
+        # Geliştirme ortamında şifreyi döndür
+        if current_app.config.get('DEBUG', False):
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
+                "error": error,
+                "password": new_password
+            }), 500
+        else:
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+            }), 500
 
-@password_reset_bp.route('/reset/self', methods=['POST'])
-@jwt_required()  # Kullanıcının kendi şifresini sıfırlaması için JWT token gerekli
+@password_reset.route('/admin/reset', methods=['POST'])
+@jwt_required()
+@admin_required
+def admin_reset_password():
+    """
+    Admin tarafından kullanıcı şifresini sıfırlar ve yeni şifreyi email ile gönderir.
+    Bu endpoint admin yetkisi gerektirir.
+    """
+    data = request.get_json()
+    
+    if not data or 'email' not in data:
+        return jsonify({"message": "Email adresi gereklidir"}), 400
+    
+    email = data['email']
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "Bu email adresine sahip kullanıcı bulunamadı"}), 404
+    
+    # Yeni şifre oluştur
+    new_password = generate_password()
+    
+    # Şifreyi hashle
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    
+    # Kullanıcının şifresini güncelle
+    user.password = hashed_password
+    db.session.commit()
+    
+    # Email gönder
+    email_sent, error = send_password_reset_email(email, new_password)
+    
+    if email_sent:
+        return jsonify({"message": "Şifre başarıyla sıfırlandı ve email gönderildi"}), 200
+    else:
+        # Geliştirme ortamında şifreyi döndür
+        if current_app.config.get('DEBUG', False):
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
+                "error": error,
+                "password": new_password
+            }), 500
+        else:
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+            }), 500
+
+@password_reset.route('/reset/self', methods=['POST'])
+@jwt_required()
 def reset_own_password():
     """
-    Giriş yapmış kullanıcının kendi şifresini sıfırlar ve yeni şifreyi email ile gönderir.
-    ---
-    tags:
-      - Şifre Yönetimi
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Şifre başarıyla sıfırlandı ve email gönderildi
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Şifreniz başarıyla sıfırlandı ve email adresinize gönderildi"
-      404:
-        description: Kullanıcı bulunamadı veya email adresi eksik
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Kullanıcı bulunamadı veya email adresi eksik"
-      500:
-        description: Email gönderimi sırasında hata oluştu
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+    Kullanıcı kendi şifresini sıfırlar ve yeni şifreyi kendi email adresine gönderir.
+    Kullanıcı kimliği JWT tokendan alınır.
     """
-    from flask_jwt_extended import get_jwt_identity
-    
-    # JWT token'dan kullanıcı ID'sini al
     user_id = get_jwt_identity()
     
-    # Kullanıcıyı ID ile bul
-    user = data_service.find_one(USERS_FILE, id=user_id)
-    if not user or not user.get('email'):
+    user = User.query.get(user_id)
+    if not user or not user.email:
         return jsonify({"message": "Kullanıcı bulunamadı veya email adresi eksik"}), 404
     
     # Yeni şifre oluştur
-    new_password = generate_secure_password(12)  # 12 karakterli güvenli şifre
+    new_password = generate_password()
     
-    # Şifreyi hashle ve kullanıcıyı güncelle
-    import bcrypt
-    password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Şifreyi hashle
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
     
-    updates = {
-        "password_hash": password_hash,
-        "updated_at": default_datetime()
-    }
-    
-    updated_user = data_service.update_item(USERS_FILE, user_id, updates)
-    
-    if not updated_user:
-        return jsonify({"message": "Şifre güncellenirken bir hata oluştu"}), 500
+    # Kullanıcının şifresini güncelle
+    user.password = hashed_password
+    db.session.commit()
     
     # Email gönder
-    email_sent = send_password_reset_email(user['email'], new_password)
+    email_sent, error = send_password_reset_email(user.email, new_password)
     
     if email_sent:
         return jsonify({"message": "Şifreniz başarıyla sıfırlandı ve email adresinize gönderildi"}), 200
     else:
-        return jsonify({
-            "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
-            "password": new_password  # Hata durumunda şifreyi yanıtta görüntüle (Sadece geliştirme ortamında kullanılmalı)
-        }), 500 
+        # Geliştirme ortamında şifreyi döndür
+        if current_app.config.get('DEBUG', False):
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
+                "error": error,
+                "password": new_password
+            }), 500
+        else:
+            return jsonify({
+                "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+            }), 500 

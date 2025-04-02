@@ -2,25 +2,15 @@
 
 Bu dokümantasyon, şifre sıfırlama ile ilgili API endpoint'lerini detaylı olarak açıklar.
 
-## Kimlik Doğrulama
+## 1. Şifre Sıfırlama (Kimlik Doğrulama Gerektirmez)
 
-Tüm endpoint'ler JWT tabanlı kimlik doğrulama gerektirmektedir. İstekleri yaparken `Authorization` başlığı şu şekilde ayarlanmalıdır:
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-## 1. Kullanıcının Şifresini Sıfırlama (Admin)
-
-Bir kullanıcının şifresini sıfırlar ve yeni şifreyi email ile gönderir. Sadece admin yetkisiyle kullanılabilir.
+Kullanıcının şifresini sıfırlar ve yeni şifreyi kullanıcının email adresine gönderir. Bu endpoint kimlik doğrulama gerektirmez, şifresini unutan kullanıcılar için uygundur.
 
 ### İstek
 
 ```
 POST /api/password/reset
 ```
-
-**Yetki**: Sadece admin kullanabilir.
 
 **İçerik Tipi**: application/json
 
@@ -36,7 +26,6 @@ POST /api/password/reset
 
 ```bash
 curl -X POST "http://localhost:5000/api/password/reset" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{"email": "kullanici@ornek.com"}'
 ```
@@ -47,7 +36,6 @@ curl -X POST "http://localhost:5000/api/password/reset" \
 const response = await fetch('http://localhost:5000/api/password/reset', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
@@ -92,7 +80,73 @@ const result = await response.json();
   }
   ```
 
-## 2. Kullanıcının Kendi Şifresini Sıfırlama
+## 2. Admin Tarafından Şifre Sıfırlama
+
+Bir kullanıcının şifresini sıfırlar ve yeni şifreyi email ile gönderir. Sadece admin yetkisiyle kullanılabilir.
+
+### İstek
+
+```
+POST /api/password/admin/reset
+```
+
+**Yetki**: Sadece admin kullanabilir.
+
+**İçerik Tipi**: application/json
+
+**Body Parametreleri**:
+
+```json
+{
+  "email": "kullanici@ornek.com"
+}
+```
+
+**Örnek İstek (curl)**:
+
+```bash
+curl -X POST "http://localhost:5000/api/password/admin/reset" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"email": "kullanici@ornek.com"}'
+```
+
+**Örnek İstek (JavaScript)**:
+
+```javascript
+const response = await fetch('http://localhost:5000/api/password/admin/reset', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'kullanici@ornek.com'
+  })
+});
+
+const result = await response.json();
+```
+
+### Yanıt
+
+**Başarılı Yanıt (200 OK)**:
+
+```json
+{
+  "message": "Şifre başarıyla sıfırlandı ve email gönderildi"
+}
+```
+
+**Olası Hata Yanıtları**:
+
+- `400 Bad Request`: Email adresi verilmemiş
+- `401 Unauthorized`: Geçerli token sağlanmadı
+- `403 Forbidden`: Kullanıcı Admin değil
+- `404 Not Found`: Belirtilen email adresine sahip kullanıcı bulunamadı
+- `500 Internal Server Error`: Email gönderimi sırasında hata oluştu
+
+## 3. Kullanıcının Kendi Şifresini Sıfırlama
 
 Giriş yapmış olan kullanıcının kendi şifresini sıfırlar ve yeni şifreyi email adresine gönderir.
 
@@ -136,20 +190,9 @@ const result = await response.json();
 
 **Olası Hata Yanıtları**:
 
+- `401 Unauthorized`: Geçerli token sağlanmadı
 - `404 Not Found`: Kullanıcı bulunamadı veya email adresi eksik
-  ```json
-  {
-    "message": "Kullanıcı bulunamadı veya email adresi eksik"
-  }
-  ```
-
 - `500 Internal Server Error`: Email gönderimi sırasında hata oluştu
-  ```json
-  {
-    "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
-    "password": "yeniSifre123!"  // Sadece geliştirme ortamında görünür
-  }
-  ```
 
 ## Email Formatı
 

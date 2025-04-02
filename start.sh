@@ -5,5 +5,7 @@ if [ -z "$PORT" ]; then
   PORT=8000
 fi
 
+echo "Starting server on port: $PORT"
+
 # Gunicorn'u belirtilen port ile başlat
 exec gunicorn --bind 0.0.0.0:$PORT run:app 
