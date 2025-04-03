@@ -64,10 +64,20 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Initialize CORS - Allow requests from localhost:3000
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
-    # Note: For more origins: origins=["http://localhost:3000", "https://your-production-domain.com"]
-    # For allowing all origins (less secure, for development maybe): CORS(app)
+    # Initialize CORS - Allow specific frontend origin with detailed settings
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["https://facerecognitionattendance.netlify.app"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "Accept"],
+            "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization"],
+            "max_age": 600
+        }
+    })
+    # Note: The previous CORS setting for localhost:3000 is now replaced.
+    # Add localhost:3000 back to the "origins" list if local development is still needed:
+    # "origins": ["https://facerecognitionattendance.netlify.app", "http://localhost:3000"]
     
     # Merge swagger config into app config
     app.config['SWAGGER'] = swagger_config
