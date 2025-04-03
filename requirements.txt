@@ -15,4 +15,5 @@ deepface
 # dlib GitHub URL'si 404 hatası verdi, orijinal dlib'i kullan
 dlib
 Flask-Cors
-gunicorn 
+gunicorn
+tf-keras # TensorFlow uyumluluğu için eklendi 
