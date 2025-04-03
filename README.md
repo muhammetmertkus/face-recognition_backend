@@ -115,4 +115,4 @@ Railway'e dağıtım yapmak için:
 
 ## Katkıda Bulunma
 
-Katkılarınız memnuniyetle karşılanır! Lütfen bir issue açın veya pull request gönderin. 
+Katkılarınız memnuniyetle karşılanır! Lütfen bir issue açın veya pull request gönderin...
