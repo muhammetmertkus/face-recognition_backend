@@ -1,0 +1,66 @@
+[
+  {
+    "user_id": 2,
+    "department": "string",
+    "title": "string",
+    "created_at": "2025-04-01T17:52:11.230576+00:00",
+    "updated_at": "2025-04-01T17:52:11.230576+00:00",
+    "id": 1
+  },
+  {
+    "user_id": 4,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:09:06.729911+00:00",
+    "updated_at": "2025-04-01T18:09:07.763306+00:00",
+    "id": 2
+  },
+  {
+    "user_id": 7,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:11:57.338308+00:00",
+    "updated_at": "2025-04-01T18:11:58.240046+00:00",
+    "id": 3
+  },
+  {
+    "user_id": 10,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:13:31.512946+00:00",
+    "updated_at": "2025-04-01T18:13:32.394090+00:00",
+    "id": 4
+  },
+  {
+    "user_id": 13,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:15:12.810803+00:00",
+    "updated_at": "2025-04-01T18:15:13.717863+00:00",
+    "id": 5
+  },
+  {
+    "user_id": 16,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:15:54.803119+00:00",
+    "updated_at": "2025-04-01T18:15:55.707592+00:00",
+    "id": 6
+  },
+  {
+    "user_id": 19,
+    "department": "CompSci",
+    "title": "Associate Professor",
+    "created_at": "2025-04-01T18:18:10.496046+00:00",
+    "updated_at": "2025-04-01T18:18:11.404252+00:00",
+    "id": 7
+  },
+  {
+    "user_id": 24,
+    "department": "Bilgisayar Mühendisliği",
+    "title": "Profesör",
+    "created_at": "2025-04-01T19:41:43.532587+00:00",
+    "updated_at": "2025-04-01T19:41:43.532587+00:00",
+    "id": 8
+  }
+]
