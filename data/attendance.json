@@ -265,5 +265,39 @@
     "created_by": 24,
     "created_at": "2025-04-02T21:42:31.010847+00:00",
     "updated_at": "2025-04-02T21:42:31.010847+00:00"
+  },
+  {
+    "id": 18,
+    "course_id": 7,
+    "date": "2025-04-04",
+    "lesson_number": 1,
+    "type": "EMOTION",
+    "photo_path": "/static/../uploads/attendance/attendance_7_2025-04-04_1_012719.jpg",
+    "total_students": 3,
+    "recognized_students": 1,
+    "unrecognized_students": 2,
+    "emotion_statistics": {
+      "neutral": 1
+    },
+    "created_by": 24,
+    "created_at": "2025-04-03T22:27:19.192483+00:00",
+    "updated_at": "2025-04-03T22:27:19.192483+00:00"
+  },
+  {
+    "id": 19,
+    "course_id": 7,
+    "date": "2025-04-03",
+    "lesson_number": 1,
+    "type": "EMOTION",
+    "photo_path": "/static/../uploads/attendance/attendance_7_2025-04-03_1_013846.jpg",
+    "total_students": 3,
+    "recognized_students": 1,
+    "unrecognized_students": 2,
+    "emotion_statistics": {
+      "neutral": 1
+    },
+    "created_by": 24,
+    "created_at": "2025-04-03T22:38:46.550264+00:00",
+    "updated_at": "2025-04-03T22:38:46.550264+00:00"
   }
 ]

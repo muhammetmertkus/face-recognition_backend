@@ -274,5 +274,77 @@
     "created_at": "2025-04-02T21:42:31.010847+00:00",
     "updated_at": "2025-04-02T21:42:31.010847+00:00",
     "id": 23
+  },
+  {
+    "attendance_id": 18,
+    "student_id": 9,
+    "status": "PRESENT",
+    "confidence": 1.0,
+    "emotion": "neutral",
+    "estimated_age": 32,
+    "estimated_gender": "Man",
+    "created_at": "2025-04-03T22:27:19.192483+00:00",
+    "updated_at": "2025-04-03T22:27:19.192483+00:00",
+    "id": 24
+  },
+  {
+    "attendance_id": 18,
+    "student_id": 20,
+    "status": "ABSENT",
+    "confidence": null,
+    "emotion": null,
+    "estimated_age": null,
+    "estimated_gender": null,
+    "created_at": "2025-04-03T22:27:19.192483+00:00",
+    "updated_at": "2025-04-03T22:27:19.192483+00:00",
+    "id": 25
+  },
+  {
+    "attendance_id": 18,
+    "student_id": 21,
+    "status": "ABSENT",
+    "confidence": null,
+    "emotion": null,
+    "estimated_age": null,
+    "estimated_gender": null,
+    "created_at": "2025-04-03T22:27:19.192483+00:00",
+    "updated_at": "2025-04-03T22:27:19.192483+00:00",
+    "id": 26
+  },
+  {
+    "attendance_id": 19,
+    "student_id": 9,
+    "status": "ABSENT",
+    "confidence": null,
+    "emotion": null,
+    "estimated_age": null,
+    "estimated_gender": null,
+    "created_at": "2025-04-03T22:38:46.550264+00:00",
+    "updated_at": "2025-04-03T22:38:46.550264+00:00",
+    "id": 27
+  },
+  {
+    "attendance_id": 19,
+    "student_id": 20,
+    "status": "PRESENT",
+    "confidence": 0.6023486744250885,
+    "emotion": "neutral",
+    "estimated_age": 29,
+    "estimated_gender": "Man",
+    "created_at": "2025-04-03T22:38:46.550264+00:00",
+    "updated_at": "2025-04-03T22:38:46.550264+00:00",
+    "id": 28
+  },
+  {
+    "attendance_id": 19,
+    "student_id": 21,
+    "status": "ABSENT",
+    "confidence": null,
+    "emotion": null,
+    "estimated_age": null,
+    "estimated_gender": null,
+    "created_at": "2025-04-03T22:38:46.550264+00:00",
+    "updated_at": "2025-04-03T22:38:46.550264+00:00",
+    "id": 29
   }
 ]

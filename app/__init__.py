@@ -67,7 +67,7 @@ def create_app(config_class=Config):
     # Initialize CORS - Allow specific frontend origin with detailed settings
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["https://facerecognitionattendance.netlify.app"],
+            "origins": ["https://facerecognitionattendance.netlify.app", "http://127.0.0.1:5000", "http://localhost:3000"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "Accept"],
             "supports_credentials": True,
