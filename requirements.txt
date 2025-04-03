@@ -1,7 +1,7 @@
 Flask
 Flask-JWT-Extended
 Werkzeug
-Pydantic
+pydantic[email]
 face_recognition
 Pillow
 python-dotenv

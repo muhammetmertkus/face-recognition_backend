@@ -10,6 +10,7 @@ from collections import Counter # For counting emotions
 from PIL import Image # To read image from filestorage
 import io # To read image from filestorage
 import face_recognition # Import face_recognition
+from flask_jwt_extended import jwt_required # Import jwt_required
 
 from app.services import data_service, face_service # Removed file_service import
 # from app.services import emotion_service # Uygulanınca import edilecek
@@ -792,11 +793,11 @@ def get_attendance_for_course(course_id):
     return jsonify(summary_list), 200
 
 @attendance_bp.route('/course/<int:course_id>/student/<int:student_id>', methods=['GET'])
-@teacher_required # Öğretmen veya Admin erişebilir (Öğrencinin kendisi de olabilir mi? Şimdilik hayır)
+@jwt_required() # JWT token'ının gerekli olduğunu belirtmek için eklendi
 def get_student_attendance_for_course(course_id, student_id):
     """
     Belirli bir dersteki belirli bir öğrencinin tüm yoklama detaylarını getirir.
-    Yalnızca dersin öğretmeni veya Admin erişebilir.
+    Dersin öğretmeni, Admin veya öğrencinin kendisi erişebilir.
     ---    
     tags:
       - Yoklama (Attendance)
@@ -821,26 +822,7 @@ def get_student_attendance_for_course(course_id, student_id):
       200:
         description: Öğrencinin dersteki yoklama detaylarının listesi.
         schema:
-          type: object
-          properties:
-             course_info: # Temel ders bilgisi
-               $ref: '#/definitions/CourseResponseShort' # Basitleştirilmiş kurs şeması
-             student_info: # Temel öğrenci bilgisi
-               $ref: '#/definitions/StudentInfoForAttendance' # Yukarıda tanımlanan şema
-             attendance_details:
-               type: array
-               description: Öğrencinin bu dersteki yoklama kayıtları.
-               items:
-                 # Detay yanıtına ek olarak tarihi de içerebilir
-                 allOf:
-                    - $ref: '#/definitions/AttendanceDetailResponse'
-                    - type: object
-                      properties:
-                          date:
-                              type: string
-                              format: date
-                              description: Yoklamanın tarihi.
-                              example: "2024-03-15"
+          $ref: '#/definitions/StudentAttendanceReportResponse' # Raporlar bölümündeki tanım kullanılabilir veya benzeri
         examples:
           application/json:
             course_info:
@@ -875,10 +857,8 @@ def get_student_attendance_for_course(course_id, student_id):
               # ... (öğrencinin diğer yoklama kayıtları)
       400:
         description: Öğrenci belirtilen derse kayıtlı değil.
-        examples:
-          application/json: { "message": "Öğrenci bu derse kayıtlı değil" }
       401:
-        description: Yetkisiz. Geçerli token sağlanmadı.
+        description: Yetkisiz. Geçerli token sağlanmadı veya geçersiz.
       403:
         description: Yasak. Bu bilgilere erişim yetkiniz yok.
       404:
@@ -895,30 +875,43 @@ def get_student_attendance_for_course(course_id, student_id):
              name:
                type: string
     """
-    # --- Yetkilendirme Kontrolü (Önce yapılmalı) --- 
-    current_role, current_user_id = get_current_user_role_and_id() 
+    # --- Yeni Yetkilendirme Kontrolü ---
+    # Artık @jwt_required() olduğu için get_current_user_role_and_id() güvenle çağrılabilir
+    current_role, current_user_id = get_current_user_role_and_id()
     if current_role is None or current_user_id is None:
-         return jsonify({"message": "Geçersiz token kimliği veya kullanıcı bulunamadı"}), 401
-    
+        # Bu durum normalde @jwt_required() sonrası olmamalı ama yine de kontrol edilebilir
+        return jsonify({"message": "Geçersiz token kimliği veya kullanıcı bulunamadı"}), 401
+
     course = data_service.find_one(COURSES_FILE, id=course_id)
     if not course: return jsonify({"message": "Ders bulunamadı"}), 404
-    
-    teacher = data_service.find_one(TEACHERS_FILE, id=course.get('teacher_id'))
-    is_teacher_of_course = teacher and teacher.get('user_id') == current_user_id
-    is_admin = current_role == "ADMIN"
-    # TODO: Öğrencinin kendi kayıtlarını görmesine izin verilmeli mi?
-    # student_user_id = data_service.find_one(STUDENTS_FILE, id=student_id).get('user_id')
-    # is_self = current_user_id == student_user_id
-    if not is_teacher_of_course and not is_admin: # and not is_self:
+
+    is_allowed = False
+    if current_role == "ADMIN":
+        is_allowed = True
+    elif current_role == "TEACHER":
+        teacher = data_service.find_one(TEACHERS_FILE, id=course.get('teacher_id'))
+        if teacher and teacher.get('user_id') == current_user_id:
+            is_allowed = True
+    elif current_role == "STUDENT":
+        # İstek yapan öğrencinin user_id'si ile ilişkili student_id'yi bulmamız lazım
+        student_profile = data_service.find_one(STUDENTS_FILE, user_id=current_user_id)
+        # URL'deki student_id ile istek yapanın student_id'si eşleşiyor mu?
+        if student_profile and student_profile.get('id') == student_id:
+            is_allowed = True
+
+    if not is_allowed:
         return jsonify({"message": "Yasak: Bu bilgilere erişim yetkiniz yok."}), 403
-    # --- Yetkilendirme Sonu --- 
+    # --- Yetkilendirme Sonu ---
 
     student = data_service.find_one(STUDENTS_FILE, id=student_id)
     if not student: return jsonify({"message": "Öğrenci bulunamadı"}), 404
 
-    # Kayıt kontrolü
+    # Kayıt kontrolü (Öğrencinin derse kayıtlı olduğundan emin ol)
     enrollment = data_service.find_one(STUDENT_COURSE_FILE, course_id=course_id, student_id=student_id)
     if not enrollment:
+        # Öğrencinin kendisi bile olsa, kayıtlı değilse 400 döndürmek mantıklı olabilir.
+        # Ya da belki sadece öğretmene/admin'e 400 döndürülür, öğrenci boş liste alır?
+        # Şimdilik tutarlılık için 400 döndürelim.
         return jsonify({"message": "Öğrenci bu derse kayıtlı değil"}), 400
 
     # Ders için tüm yoklama ID'lerini bul
