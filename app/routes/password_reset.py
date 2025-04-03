@@ -6,12 +6,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models.user import default_datetime
+from app.models.user import User, default_datetime
 from app.services import data_service
 from app.utils.auth import admin_required
 import html
 import bcrypt
-from ..models.user import User, db
 
 password_reset = Blueprint('password_reset', __name__)
 
@@ -36,7 +35,7 @@ def send_password_reset_email(email, new_password):
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     sender_email = "bykusbilet@gmail.com"  # Gönderen e-posta
-    app_password = "oqbw kgrc ptlt iotl"  # Uygulama şifresi
+    app_password = "rgne nevu etmn lqwr"  # Güncellenmiş uygulama şifresi
     
     msg = MIMEMultipart("alternative")
     msg["Subject"] = "Şifre Sıfırlama - Yüz Tanıma Sistemi"
@@ -140,7 +139,8 @@ def reset_password():
     
     email = data['email']
     
-    user = User.query.filter_by(email=email).first()
+    # JSON veri dosyasından kullanıcıyı bul
+    user = data_service.find_one(USERS_FILE, email=email)
     if not user:
         return jsonify({"message": "Bu email adresine sahip kullanıcı bulunamadı"}), 404
     
@@ -148,11 +148,18 @@ def reset_password():
     new_password = generate_password()
     
     # Şifreyi hashle
-    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Kullanıcının şifresini güncelle
-    user.password = hashed_password
-    db.session.commit()
+    updates = {
+        "password_hash": hashed_password,
+        "updated_at": default_datetime()
+    }
+    
+    updated_user = data_service.update_item(USERS_FILE, user['id'], updates)
+    
+    if not updated_user:
+        return jsonify({"message": "Şifre güncellenirken bir hata oluştu"}), 500
     
     # Email gönder
     email_sent, error = send_password_reset_email(email, new_password)
@@ -187,7 +194,8 @@ def admin_reset_password():
     
     email = data['email']
     
-    user = User.query.filter_by(email=email).first()
+    # JSON veri dosyasından kullanıcıyı bul
+    user = data_service.find_one(USERS_FILE, email=email)
     if not user:
         return jsonify({"message": "Bu email adresine sahip kullanıcı bulunamadı"}), 404
     
@@ -195,11 +203,18 @@ def admin_reset_password():
     new_password = generate_password()
     
     # Şifreyi hashle
-    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Kullanıcının şifresini güncelle
-    user.password = hashed_password
-    db.session.commit()
+    updates = {
+        "password_hash": hashed_password,
+        "updated_at": default_datetime()
+    }
+    
+    updated_user = data_service.update_item(USERS_FILE, user['id'], updates)
+    
+    if not updated_user:
+        return jsonify({"message": "Şifre güncellenirken bir hata oluştu"}), 500
     
     # Email gönder
     email_sent, error = send_password_reset_email(email, new_password)
@@ -228,22 +243,30 @@ def reset_own_password():
     """
     user_id = get_jwt_identity()
     
-    user = User.query.get(user_id)
-    if not user or not user.email:
+    # JSON veri dosyasından kullanıcıyı bul
+    user = data_service.find_one(USERS_FILE, id=user_id)
+    if not user or not user.get('email'):
         return jsonify({"message": "Kullanıcı bulunamadı veya email adresi eksik"}), 404
     
     # Yeni şifre oluştur
     new_password = generate_password()
     
     # Şifreyi hashle
-    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     # Kullanıcının şifresini güncelle
-    user.password = hashed_password
-    db.session.commit()
+    updates = {
+        "password_hash": hashed_password,
+        "updated_at": default_datetime()
+    }
+    
+    updated_user = data_service.update_item(USERS_FILE, user_id, updates)
+    
+    if not updated_user:
+        return jsonify({"message": "Şifre güncellenirken bir hata oluştu"}), 500
     
     # Email gönder
-    email_sent, error = send_password_reset_email(user.email, new_password)
+    email_sent, error = send_password_reset_email(user['email'], new_password)
     
     if email_sent:
         return jsonify({"message": "Şifreniz başarıyla sıfırlandı ve email adresinize gönderildi"}), 200

@@ -75,8 +75,16 @@ const result = await response.json();
 - `500 Internal Server Error`: Email gönderimi sırasında hata oluştu
   ```json
   {
+    "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu"
+  }
+  ```
+  
+  Debug modunda hata mesajı ve şifre görünür:
+  ```json
+  {
     "message": "Şifre sıfırlandı ancak email gönderiminde hata oluştu",
-    "password": "yeniSifre123!"  // Sadece geliştirme ortamında görünür
+    "error": "SMTP hata mesajı",
+    "password": "yeniSifre123!"
   }
   ```
 
@@ -144,7 +152,7 @@ const result = await response.json();
 - `401 Unauthorized`: Geçerli token sağlanmadı
 - `403 Forbidden`: Kullanıcı Admin değil
 - `404 Not Found`: Belirtilen email adresine sahip kullanıcı bulunamadı
-- `500 Internal Server Error`: Email gönderimi sırasında hata oluştu
+- `500 Internal Server Error`: Email gönderimi sırasında hata oluştu veya şifre güncellenemedi
 
 ## 3. Kullanıcının Kendi Şifresini Sıfırlama
 
@@ -192,14 +200,30 @@ const result = await response.json();
 
 - `401 Unauthorized`: Geçerli token sağlanmadı
 - `404 Not Found`: Kullanıcı bulunamadı veya email adresi eksik
-- `500 Internal Server Error`: Email gönderimi sırasında hata oluştu
+- `500 Internal Server Error`: Email gönderimi sırasında hata oluştu veya şifre güncellenemedi
 
-## Email Formatı
+## Teknik Detaylar
+
+### Veri Saklama
+Şifre bilgileri JSON veri dosyalarında saklanır. Şifre güncellemesi `data_service.update_item` fonksiyonu kullanılarak gerçekleştirilir.
+
+### Email Gönderimi
+Sistem, Gmail SMTP sunucusu üzerinden email gönderimi yapar. SMTP port 587 kullanılır ve TLS bağlantısı kurulur.
+
+### Şifre Oluşturma
+Yeni şifreler otomatik olarak aşağıdaki özelliklere sahip olacak şekilde oluşturulur:
+- 12 karakter uzunluğunda
+- En az 1 büyük harf
+- En az 1 küçük harf
+- En az 1 rakam
+- En az 1 özel karakter (!@#$%&*)
+
+### Email Formatı
 
 Şifre sıfırlama emaili profesyonel bir HTML formatında gönderilir. Email içeriği:
 
-1. Şirket logosu ve başlık
-2. Kullanıcıya hoş geldin mesajı
+1. Kurum başlığı
+2. Kullanıcıya bilgilendirme mesajı
 3. Yeni şifre (vurgulanmış ve belirgin bir kutu içinde)
 4. Şifre güvenliği ve değiştirme tavsiyesi
 5. İletişim bilgileri
@@ -207,6 +231,8 @@ const result = await response.json();
 ## Güvenlik Notları
 
 - Şifreler bcrypt ile güvenli bir şekilde hashlenip saklanır
+- Şifre hashlemede salt kullanılır (`bcrypt.gensalt()`)
 - Yeni şifreler, sayılar, harfler ve özel karakterler içeren 12 karakter uzunluğunda rastgele oluşturulur
-- Email gönderimi SSL şifrelemesi ile yapılır
-- Mail gönderimi sırasında hata oluşması durumunda, sadece geliştirme ortamında şifre yanıtta görünür. Production ortamında bu özellik kapatılmalıdır 
+- Email gönderimi TLS şifrelemesi ile yapılır
+- Mail gönderimi sırasında hata oluşması durumunda, sadece DEBUG modu aktifken şifre yanıtta görünür
+- Production ortamında hata yanıtları şifre bilgisi içermez 

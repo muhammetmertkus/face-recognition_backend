@@ -34,11 +34,11 @@ def register():
           $ref: '#/definitions/UserCreate'
     responses:
       201:
-        description: Kullanıcı ve (varsa) profil başarıyla oluşturuldu. Oluşturulan kullanıcı detaylarını döndürür.
+        description: Kullanıcı ve (varsa) profil başarıyla oluşturuldu. Oluşturulan kullanıcı detaylarını ve ilgili profil ID'sini döndürür.
         schema:
-          $ref: '#/definitions/UserResponse'
+          $ref: '#/definitions/UserResponseWithProfileID'
         examples:
-          application/json:
+          application/json (Student):
             id: 1
             email: "yeni.ogrenci@ornek.com"
             first_name: "Yeni"
@@ -47,6 +47,17 @@ def register():
             is_active: true
             created_at: "2024-01-01T10:00:00Z"
             updated_at: "2024-01-01T10:00:00Z"
+            student_id: 5
+          application/json (Teacher):
+            id: 2
+            email: "yeni.ogretmen@ornek.com"
+            first_name: "Yeni"
+            last_name: "Öğretmen"
+            role: "TEACHER"
+            is_active: true
+            created_at: "2024-01-01T10:00:00Z"
+            updated_at: "2024-01-01T10:00:00Z"
+            teacher_id: 3
       400:
         description: |-
           Geçersiz girdi verisi sağlandı. Sebepleri şunlar olabilir:
@@ -147,6 +158,20 @@ def register():
             format: date-time
             description: Kullanıcının son güncellenme zaman damgası.
             example: "2024-01-01T10:00:00Z"
+      UserResponseWithProfileID:
+        allOf:
+          - $ref: '#/definitions/UserResponse'
+        properties:
+          teacher_id:
+            type: integer
+            description: Eğer kullanıcı bir öğretmen ise, öğretmen profilinin ID'si.
+            example: 1
+            nullable: true
+          student_id:
+            type: integer
+            description: Eğer kullanıcı bir öğrenci ise, öğrenci profilinin ID'si.
+            example: 5
+            nullable: true
     """
     json_data = request.get_json()
     if not json_data:
@@ -187,6 +212,7 @@ def register():
     }
 
     user_id = None # Olası geri alma için user_id başlat
+    profile_id = None # Öğrenci veya öğretmen ID'sini tutmak için
     try:
         created_user_dict = data_service.add_item(USERS_FILE, new_user_dict)
         user_id = created_user_dict['id']
@@ -209,7 +235,8 @@ def register():
                 "created_at": now,
                 "updated_at": now
             }
-            data_service.add_item(TEACHERS_FILE, teacher_profile)
+            created_profile = data_service.add_item(TEACHERS_FILE, teacher_profile)
+            profile_id = created_profile.get('id') # Öğretmen ID'sini al
         elif user_data.role.upper() == "STUDENT":
             # Student'a özgü alanları UserCreate'den doğrula
             try:
@@ -233,12 +260,19 @@ def register():
                  "created_at": now,
                  "updated_at": now
             }
-            data_service.add_item(STUDENTS_FILE, student_profile)
+            created_profile = data_service.add_item(STUDENTS_FILE, student_profile)
+            profile_id = created_profile.get('id') # Öğrenci ID'sini al
 
         # Yanıt şeması için dict'i User modeline geri dönüştür
-        # Gerekirse tutarlılığı sağlamak için kullanıcıyı tekrar al veya created_user_dict kullan
         user_obj = User(**created_user_dict)
         response_data = UserResponse.from_orm(user_obj).dict()
+
+        # Profile ID'sini yanıta ekle
+        if user_data.role.upper() == "TEACHER" and profile_id is not None:
+            response_data['teacher_id'] = profile_id
+        elif user_data.role.upper() == "STUDENT" and profile_id is not None:
+            response_data['student_id'] = profile_id
+
         return jsonify(response_data), 201
 
     except ValueError as ve:

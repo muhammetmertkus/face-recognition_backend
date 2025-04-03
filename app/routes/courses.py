@@ -44,7 +44,7 @@ def _get_course_details(course_dict):
     return course_dict
 
 @courses_bp.route('/', methods=['GET'])
-@jwt_required() # Giriş yapmış herhangi bir kullanıcı ders listesini görebilir
+# @jwt_required() # Removed JWT requirement
 def get_courses():
     """
     Tüm derslerin listesini getirir.
@@ -52,11 +52,11 @@ def get_courses():
     ---    
     tags:
       - Dersler (Courses)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     responses:
       200:
-        description: Derslerin listesi (temel öğretmen bilgileriyle).
+        description: Derslerin listesi başarıyla alındı.
         schema:
           type: array
           items:
@@ -248,15 +248,15 @@ def get_courses():
     return jsonify(detailed_courses), 200
 
 @courses_bp.route('/<int:course_id>', methods=['GET'])
-@jwt_required() # Giriş yapmış herhangi bir kullanıcı detayları görebilir
+# @jwt_required() # Removed JWT requirement
 def get_course(course_id):
     """
     Belirli bir dersin detaylarını (öğretmen ve ders saatleri dahil) getirir.
     ---    
     tags:
       - Dersler (Courses)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -325,8 +325,8 @@ def create_course():
     ---    
     tags:
       - Dersler (Courses)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: body
         name: body
@@ -555,8 +555,8 @@ def update_course(course_id):
     ---    
     tags:
       - Dersler (Courses)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -723,8 +723,8 @@ def delete_course(course_id):
     ---    
     tags:
       - Dersler (Courses)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -838,8 +838,8 @@ def get_course_students(course_id):
     tags:
       - Dersler (Courses)
       - Öğrenciler (Students)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -911,23 +911,17 @@ def get_course_students(course_id):
     return jsonify(enrolled_students_details), 200
 
 @courses_bp.route('/<int:course_id>/students', methods=['POST'])
-@teacher_required # Sadece Öğretmen veya Admin öğrenci ekleyebilir
 def add_student_to_course(course_id):
     """
-    Bir öğrenciyi belirli bir derse kaydeder.
-    ---    
+    Belirli bir öğrenciyi belirli bir derse ekler.
+    DİKKAT: Bu endpoint şu anda token gerektirmiyor ve herkese açıktır! Yetkilendirme kontrolü yapılmaz.
+    ---
     tags:
       - Dersler (Courses)
-      - Öğrenciler (Students)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #   - Bearer: []
     parameters:
-      - in: path
-        name: course_id
-        type: integer
-        required: true
-        description: Öğrencinin kaydedileceği dersin ID'si.
-        example: 1
+      - name: course_id
       - in: body
         name: body
         required: true
@@ -955,10 +949,6 @@ def add_student_to_course(course_id):
         examples:
            application/json (Validation): { "message": "Doğrulama Hatası", "errors": [{"field": "student_id", "message": "alan gerekli"}] }
            application/json (Conflict): { "message": "Öğrenci 5 zaten 1 ID'li derse kayıtlı" }
-      401:
-        description: Yetkisiz. Geçerli bir token sağlanmadı.
-      403:
-        description: Yasak. Kullanıcı bu işlemi yapmaya yetkili değil.
       404:
         description: Belirtilen ID'ye sahip Ders veya Öğrenci bulunamadı.
         examples:
@@ -1053,8 +1043,8 @@ def remove_student_from_course(course_id, student_id):
     tags:
       - Dersler (Courses)
       - Öğrenciler (Students)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -1109,13 +1099,13 @@ def remove_student_from_course(course_id, student_id):
 def get_course_attendance_records(course_id):
     """
     Belirli bir ders için tüm ana yoklama kayıtlarını getirir.
-    Liste görünümünde kısalık için varsayılan olarak detayları (öğrenci listesi) içermez.
+    Her yoklama kaydı için sınıfta olan ve olmayan öğrencilerin detaylı listesini içerir.
     ---    
     tags:
       - Dersler (Courses)
       - Yoklama (Attendance)
-    security:
-      - Bearer: []
+    # security: # Removed security section
+    #  - Bearer: []
     parameters:
       - in: path
         name: course_id
@@ -1125,12 +1115,112 @@ def get_course_attendance_records(course_id):
         example: 1
     responses:
       200:
-        description: Ders için yoklama kayıtlarının listesi (özet görünüm).
+        description: Ders için yoklama kayıtlarının listesi (detaylı öğrenci bilgileriyle).
         schema:
           type: array
           items:
-            # Burada basitleştirilmiş bir AttendanceResponse daha iyi olabilir
-            $ref: '#/definitions/AttendanceResponse' # Attendance şemasını kullan
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 101
+              course_id:
+                type: integer
+                example: 1
+              date:
+                type: string
+                format: date
+                example: "2024-03-05"
+              lesson_number:
+                type: integer
+                example: 1
+              type:
+                type: string
+                enum: ["FACE", "EMOTION", "FACE_EMOTION", "MANUAL"]
+                example: "FACE"
+              photo_path:
+                type: string
+                nullable: true
+                example: "/uploads/attendance/attendance_1_...jpg"
+              total_students:
+                type: integer
+                example: 25
+              recognized_students:
+                type: integer
+                example: 23
+              unrecognized_students:
+                type: integer
+                example: 2
+              emotion_statistics:
+                type: object
+                nullable: true
+                example: {"HAPPY": 15, "NEUTRAL": 7, "SAD": 1}
+              created_by:
+                type: integer
+                example: 2
+              created_at:
+                type: string
+                format: date-time
+                example: "2024-03-05T10:05:00Z"
+              present_students:
+                type: array
+                description: Sınıfta var olan öğrencilerin detaylı listesi
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 5
+                    student_number:
+                      type: string
+                      example: "S12345"
+                    first_name:
+                      type: string
+                      example: "Ayşe"
+                    last_name:
+                      type: string
+                      example: "Kaya"
+                    email:
+                      type: string
+                      example: "ayse.kaya@ornek.com"
+                    confidence:
+                      type: number
+                      format: float
+                      nullable: true
+                      example: 0.95
+                    emotion:
+                      type: string
+                      nullable: true
+                      example: "happy"
+                    estimated_age:
+                      type: integer
+                      nullable: true
+                      example: 21
+                    estimated_gender:
+                      type: string
+                      nullable: true
+                      example: "Woman"
+              absent_students:
+                type: array
+                description: Sınıfta olmayan öğrencilerin detaylı listesi
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 12
+                    student_number:
+                      type: string
+                      example: "S54321"
+                    first_name:
+                      type: string
+                      example: "Ali"
+                    last_name:
+                      type: string
+                      example: "Veli"
+                    email:
+                      type: string
+                      example: "ali.veli@ornek.com"
         examples:
           application/json:
             - id: 101
@@ -1142,10 +1232,49 @@ def get_course_attendance_records(course_id):
               total_students: 25
               recognized_students: 23
               unrecognized_students: 2
-              emotion_statistics: null
-              created_by: 2 # Öğretmen kullanıcı ID'si
+              emotion_statistics: {"HAPPY": 15, "NEUTRAL": 7, "SAD": 1}
+              created_by: 2
               created_at: "2024-03-05T10:05:00Z"
-              # details: [] # Bu endpointte detaylar genellikle dışarıda bırakılır
+              present_students: [
+                {
+                  "id": 5,
+                  "student_number": "S12345",
+                  "first_name": "Ayşe",
+                  "last_name": "Kaya",
+                  "email": "ayse.kaya@ornek.com",
+                  "confidence": 0.95,
+                  "emotion": "happy",
+                  "estimated_age": 21,
+                  "estimated_gender": "Woman"
+                },
+                {
+                  "id": 8,
+                  "student_number": "S23456",
+                  "first_name": "Mehmet",
+                  "last_name": "Demir",
+                  "email": "mehmet.demir@ornek.com",
+                  "confidence": 0.88,
+                  "emotion": "neutral",
+                  "estimated_age": 22,
+                  "estimated_gender": "Man"
+                }
+              ]
+              absent_students: [
+                {
+                  "id": 12,
+                  "student_number": "S54321",
+                  "first_name": "Ali",
+                  "last_name": "Veli",
+                  "email": "ali.veli@ornek.com"
+                },
+                {
+                  "id": 15,
+                  "student_number": "S65432",
+                  "first_name": "Zeynep",
+                  "last_name": "Yılmaz",
+                  "email": "zeynep.yilmaz@ornek.com"
+                }
+              ]
             # ... (diğer yoklama kayıtları) ...
       401:
         description: Yetkisiz. Geçerli bir token sağlanmadı.
@@ -1153,76 +1282,6 @@ def get_course_attendance_records(course_id):
         description: Yasak. Kullanıcı bu kayıtları görme yetkisine sahip değil.
       404:
         description: Belirtilen ID'ye sahip ders bulunamadı.
-    definitions:
-        # Eğer global olarak tanımlı değilse AttendanceResponse tanımını ekle
-        # Bu tanım attendance.py içinde de olabilir, tutarlılık önemli
-        AttendanceResponse: 
-            type: object
-            description: Bir yoklama kaydının detayları (özet veya tam).
-            properties:
-                id:
-                  type: integer
-                  description: Yoklama kaydının benzersiz ID'si.
-                  example: 101
-                course_id:
-                  type: integer
-                  description: Yoklamanın ait olduğu dersin ID'si.
-                  example: 1
-                date:
-                  type: string
-                  format: date
-                  description: Yoklamanın alındığı tarih (YYYY-AA-GG).
-                  example: "2024-03-05"
-                lesson_number:
-                  type: integer
-                  description: Yoklamanın ilgili dersin o günkü kaçıncı dersi olduğu.
-                  example: 1
-                type:
-                  type: string
-                  enum: ["FACE", "EMOTION", "FACE_EMOTION", "MANUAL"] # MANUEL eklenebilir
-                  description: Yoklamanın türü (Yüz tanıma, Duygu analizi vb.).
-                  example: "FACE"
-                photo_path:
-                  type: string
-                  nullable: true
-                  description: Yoklama için kullanılan fotoğrafın sunucudaki göreceli yolu (varsa).
-                  example: "/uploads/attendance/attendance_1_20240305_1_....jpg"
-                total_students:
-                  type: integer
-                  nullable: true
-                  description: Yoklama anında derse kayıtlı toplam öğrenci sayısı.
-                  example: 25
-                recognized_students:
-                  type: integer
-                  nullable: true
-                  description: Yüz tanıma ile tanınan (genellikle 'VAR' kabul edilen) öğrenci sayısı. Manuel güncellemelerle değişebilir.
-                  example: 23
-                unrecognized_students:
-                  type: integer
-                  nullable: true
-                  description: Derse kayıtlı olup yoklamada 'VAR' olarak işaretlenmeyen öğrenci sayısı (genellikle 'YOK' kabul edilir). Manuel güncellemelerle değişebilir.
-                  example: 2
-                emotion_statistics:
-                  type: object
-                  nullable: true
-                  description: Yoklama sırasındaki genel duygu istatistikleri (eğer toplandıysa).
-                  example: {"HAPPY": 15, "NEUTRAL": 7, "SAD": 1}
-                created_by:
-                  type: integer
-                  description: Yoklamayı oluşturan kullanıcının (öğretmen/admin) ID'si.
-                  example: 2
-                created_at:
-                  type: string
-                  format: date-time
-                  description: Yoklama kaydının oluşturulma zaman damgası.
-                  example: "2024-03-05T10:05:00Z"
-                # details: # Detay listesi, bu özel endpoint için genellikle dışarıda bırakılır
-                #   type: array
-                #   items:
-                #       $ref: '#/definitions/AttendanceDetailResponse'
-                # course: # Ders detayları, ana kaynak olduğu için dışarıda bırakılır
-                #   type: object
-
     """
     course = data_service.find_one(COURSES_FILE, id=course_id)
     if not course:
@@ -1230,12 +1289,64 @@ def get_course_attendance_records(course_id):
 
     # Yetkilendirme decorator tarafından halledilir
 
+    # Ders için yoklama kayıtlarını getir
     attendance_records = data_service.find_many(ATTENDANCE_FILE, course_id=course_id)
-    # İsteğe bağlı: Tarih/ders numarasına göre sırala
+    # Tarih/ders numarasına göre sırala
     attendance_records.sort(key=lambda x: (x.get('date',''), x.get('lesson_number', 0)))
     
-    # İsteğe bağlı: Yanıtı şekillendirmek için Pydantic modeli kullan (örn. detayları hariç tut)
-    # response_models = [AttendanceResponse(**rec).dict(exclude={'details'}) for rec in attendance_records]
-    # return jsonify(response_models), 200
+    # Her bir yoklama kaydı için detaylı öğrenci bilgilerini al
+    detailed_records = []
+    for record in attendance_records:
+        attendance_id = record.get('id')
+        
+        # Yoklama detaylarını al
+        details = data_service.find_many(ATTENDANCE_DETAILS_FILE, attendance_id=attendance_id)
+        
+        # Var olan ve olmayan öğrenci listelerini oluştur
+        present_students = []
+        absent_students = []
+        
+        for detail in details:
+            student_id = detail.get('student_id')
+            student = data_service.find_one(STUDENTS_FILE, id=student_id)
+            
+            if student:
+                # Öğrenci kullanıcı bilgilerini al
+                user = data_service.find_one(USERS_FILE, id=student.get('user_id'))
+                
+                # Temel öğrenci bilgileri
+                student_info = {
+                    "id": student_id,
+                    "student_number": student.get('student_number')
+                }
+                
+                # Kullanıcı bilgilerini ekle (varsa)
+                if user:
+                    student_info.update({
+                        "first_name": user.get('first_name'),
+                        "last_name": user.get('last_name'),
+                        "email": user.get('email')
+                    })
+                
+                # Öğrencinin durumuna göre listeye ekle
+                if detail.get('status') == 'PRESENT':
+                    # Eğer öğrenci varsa, yoklama detaylarını da ekle
+                    student_info.update({
+                        "confidence": detail.get('confidence'),
+                        "emotion": detail.get('emotion'),
+                        "estimated_age": detail.get('estimated_age'),
+                        "estimated_gender": detail.get('estimated_gender')
+                    })
+                    present_students.append(student_info)
+                else:
+                    # Öğrenci yoksa, temel bilgileri yeterli
+                    absent_students.append(student_info)
+        
+        # Yoklama kaydını detaylı bilgilerle güncelle
+        record_copy = record.copy()
+        record_copy["present_students"] = present_students
+        record_copy["absent_students"] = absent_students
+        
+        detailed_records.append(record_copy)
 
-    return jsonify(attendance_records), 200 # Şimdilik ham listeyi döndür 
+    return jsonify(detailed_records), 200 

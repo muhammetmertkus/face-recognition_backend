@@ -514,18 +514,19 @@ def delete_student(student_id):
 
 
 @students_bp.route('/<int:student_id>/face', methods=['POST'])
-@jwt_required()
+# @jwt_required() # Removed JWT requirement again as requested by user
 def upload_student_face(student_id):
     """
-    Belirli bir öğrenci için bir yüz fotoğrafı yükler ve yüz kodlamalarını çıkarıp kaydeder.
-    Mevcut bir fotoğraf varsa üzerine yazılır.
-    Yetki: Öğrencinin kendisi, Öğretmenler veya Admin.
-    ---    
+    Bir öğrenci için yüz tanıma fotoğrafı yükler ve işler.
+    DİKKAT: Bu endpoint şu anda token gerektirmiyor ve herkese açıktır!
+    ---
     tags:
       - Öğrenciler (Students)
       - Yüz Tanıma (Face Recognition)
-    security:
-      - Bearer: []
+    # security: # Removed security requirement again
+    #   - Bearer: []
+    consumes:
+      - multipart/form-data
     parameters:
       - in: path
         name: student_id
@@ -540,14 +541,9 @@ def upload_student_face(student_id):
         description: Yüklenecek öğrenci yüz fotoğrafı.
     responses:
       200:
-        description: Yüz fotoğrafı başarıyla yüklendi ve kodlamalar kaydedildi.
+        description: Yüz tanıma işlemi başarılı.
         schema:
           $ref: '#/definitions/StudentFaceUploadResponse'
-        examples:
-          application/json:
-            message: "Yüz fotoğrafı başarıyla yüklendi ve kodlamalar kaydedildi."
-            face_photo_url: "/uploads/faces/student_5_face_20240310120530.jpg"
-            encodings_count: 1 # Veya bulunan kodlama sayısı
       400:
         description: |-
           Geçersiz istek. Sebepleri:
@@ -560,21 +556,13 @@ def upload_student_face(student_id):
           application/json (No File): { "message": "İstekte dosya bölümü yok" }
           application/json (Invalid Type): { "message": "Dosya türüne izin verilmiyor..." }
           application/json (No Face): { "message": "Yüklenen resimde yüz tespit edilemedi." }
-      401:
-        description: Yetkisiz. Geçerli token sağlanmadı.
-      403:
-        description: Yasak. Kullanıcının bu işlemi yapma yetkisi yok (Öğrencinin kendisi, Öğretmen veya Admin değil).
-        examples:
-          application/json: { "message": "Bu işlem için yetkiniz yok." }
-      404:
-        description: Belirtilen ID'ye sahip öğrenci bulunamadı.
     definitions:
       StudentFaceUploadResponse:
           type: object
           properties:
               message:
                   type: string
-                  example: "Yüz fotoğrafı başarıyla yüklendi..."
+                  example: "Yüz tanıma işlemi başarılı."
               face_photo_url:
                   type: string
                   description: Kaydedilen fotoğrafın sunucu yolu.
@@ -588,22 +576,24 @@ def upload_student_face(student_id):
                   description: Yüzü yüklenen öğrencinin ID'si.
                   example: 5
     """
-    # --- Custom Authorization Check --- 
-    current_role, current_user_id = get_current_user_role_and_id()
-    if current_role is None or current_user_id is None:
-        return jsonify({"message": "Geçersiz token kimliği veya kullanıcı bulunamadı"}), 401
-    
+    # --- Custom Authorization Check (REMOVED as per user request) ---
+    # current_role, current_user_id = get_current_user_role_and_id()
+    # if current_role is None or current_user_id is None:
+    #     return jsonify({"message": "Geçersiz token kimliği veya kullanıcı bulunamadı"}), 401
+
     student = data_service.find_one(STUDENTS_FILE, id=student_id)
     if not student:
         return jsonify({"message": "Öğrenci bulunamadı"}), 404
 
-    is_owner = student.get('user_id') == current_user_id
-    is_admin = current_role == "ADMIN"
-    is_teacher = current_role == "TEACHER"
+    # --- Authorization Logic (REMOVED as per user request) ---
+    # user = data_service.find_one(USERS_FILE, id=student.get('user_id'))
+    # is_owner = (current_role == 'STUDENT' and user and user.get('id') == current_user_id)
+    # is_teacher = (current_role == 'TEACHER') # Teachers can upload for any student? Check requirements.
+    # is_admin = (current_role == 'ADMIN')
 
-    if not (is_owner or is_admin or is_teacher):
-        return jsonify({"message": "Bu işlem için yetkiniz yok."}), 403
-    # --- End Custom Authorization Check --- 
+    # if not (is_owner or is_teacher or is_admin):
+    #     return jsonify({"message": "Bu işlem için yetkiniz yok"}), 403
+    # --- End Custom Authorization Check ---
 
     # --- File Handling and Validation ---
     if 'file' not in request.files:
@@ -680,7 +670,7 @@ def upload_student_face(student_id):
                  return jsonify({"message": "Yüz işlendikten sonra öğrenci kaydı güncellenemedi."}), 500
 
             response_data = StudentFaceUploadResponse(
-                message="Yüz fotoğrafı başarıyla işlendi ve kodlama kaydedildi.",
+                message="Yüz tanıma işlemi başarılı.",
                 face_photo_url=face_photo_url,
                 encodings_count=len(encodings),
                 student_id=student_id
